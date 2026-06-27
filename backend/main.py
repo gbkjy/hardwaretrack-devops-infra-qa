@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import engine, Base, ProductoDb, VentaDb, get_db
-from models import VentaRequest, VentaResponse, ProductoResponse, HealthResponse
+from models import VentaRequest, VentaResponse, ProductoResponse, HealthResponse, ProductoCreateRequest, VentaItemResponse
 
 app = FastAPI()
 
@@ -67,7 +67,7 @@ def crear_venta(request: VentaRequest, db: Session = Depends(get_db)):
 def listar_productos(db: Session = Depends(get_db)):
     productos = db.query(ProductoDb).all()
     return [
-        ProductoResponse(id=p.id, nombre=p.nombre, stock=p.stock)
+        ProductoResponse(id=p.id, nombre=p.nombre, precio=p.precio, stock=p.stock)
         for p in productos
     ]
 
@@ -82,5 +82,40 @@ def obtener_producto(producto_id: int, db: Session = Depends(get_db)):
     return ProductoResponse(
         id=producto.id,
         nombre=producto.nombre,
+        precio=producto.precio,
         stock=producto.stock
     )
+
+@app.post("/api/v1/productos", response_model=ProductoResponse, status_code=status.HTTP_201_CREATED)
+def crear_producto(request: ProductoCreateRequest, db: Session = Depends(get_db)):
+    nuevo_producto = ProductoDb(
+        nombre=request.nombre,
+        precio=request.precio,
+        stock=request.stock
+    )
+    db.add(nuevo_producto)
+    db.commit()
+    db.refresh(nuevo_producto)
+    return ProductoResponse(
+        id=nuevo_producto.id,
+        nombre=nuevo_producto.nombre,
+        precio=nuevo_producto.precio,
+        stock=nuevo_producto.stock
+    )
+
+@app.get("/api/v1/ventas", response_model=List[VentaItemResponse])
+def listar_ventas(db: Session = Depends(get_db)):
+    results = db.query(VentaDb, ProductoDb.nombre).join(
+        ProductoDb, VentaDb.producto_id == ProductoDb.id
+    ).order_by(VentaDb.fecha.desc()).all()
+    
+    return [
+        VentaItemResponse(
+            id=venta.id,
+            producto_id=venta.producto_id,
+            nombre_producto=nombre,
+            cantidad=venta.cantidad,
+            fecha=venta.fecha.isoformat() + "Z"
+        )
+        for venta, nombre in results
+    ]

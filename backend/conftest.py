@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from main import app
+from sqlalchemy import text
 from database import SessionLocal, ProductoDb, VentaDb
 
 @pytest.fixture(scope="function")
@@ -21,6 +22,8 @@ def reset_stock():
             ProductoDb(id=5, nombre="Tarjeta gráfica RTX 4060", precio=350000.0, stock=999999),
         ]
         db.bulk_save_objects(productos)
+        db.commit()
+        db.execute(text("SELECT setval('productos_id_seq', (SELECT MAX(id) FROM productos))"))
         db.commit()
     finally:
         db.close()
