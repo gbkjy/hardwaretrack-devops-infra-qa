@@ -18,6 +18,7 @@ node_modules/
 *.md
 *.MD
 *.txt
+!**/requirements.txt
 docs/
 /docs
 
