@@ -49,3 +49,55 @@ jobs:
         with:
           name: pip-audit-report
           path: qa-artifacts/pip-audit-report.json
+
+  despliegue-staging:
+    name: Despliegue continuo a Staging
+    runs-on: ubuntu-latest
+    needs: [tests-cobertura, auditoria-sca]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Desplegar en VPS via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_IP }}
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd hardwaretrack-devops-infra-qa/infra
+            
+            # 1. Respaldar la imagen actual si existe
+            docker tag infra_backend-staging:latest infra_backend-staging:backup || true
+            
+            # 2. Traer el nuevo código
+            git pull origin main
+            
+            # 3. Compilar la nueva versión (si falla la compilación, el script se detiene aquí y el contenedor viejo sigue corriendo)
+            docker-compose -f docker-compose.staging.yml build backend-staging
+            
+            # 4. Intentar levantar la nueva versión sin apagar el resto de servicios
+            docker-compose -f docker-compose.staging.yml up -d --no-deps backend-staging
+            
+            # 5. Loop de verificación del Healthcheck (esperar hasta 30s)
+            echo "verificando contenedor..."
+            SUCCESS=false
+            for i in {1..10}; do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' infra_backend-staging_1 2>/dev/null || echo "starting")
+              if [ "$STATUS" = "healthy" ]; then
+                echo "contenedor saludable"
+                SUCCESS=true
+                break
+              fi
+              echo "esperando confirmacion... (intento $i/10, estado: $STATUS)"
+              sleep 3
+            done
+            
+            # 6. Si falló al levantar, revertir a la versión de respaldo de inmediato
+            if [ "$SUCCESS" = false ]; then
+              echo "error de arranque, ejecutando rollback..."
+              docker tag infra_backend-staging:backup infra_backend-staging:latest
+              docker-compose -f docker-compose.staging.yml up -d --no-deps backend-staging
+              echo "rollback finalizado"
+              exit 1
+            fi
+
+
