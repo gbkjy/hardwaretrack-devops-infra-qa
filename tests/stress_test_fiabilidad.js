@@ -1,5 +1,6 @@
 import http from 'k6/http';
 import { check } from 'k6';
+import { htmlReport } from "https://raw.githubusercontent.com/benc-uk/k6-reporter/main/dist/bundle.js";
 
 export const options = {
   scenarios: {
@@ -23,4 +24,10 @@ export default function () {
   const params = { headers: { 'Content-Type': 'application/json' } };
   const res = http.post(url, payload, params);
   check(res, { 'status is 200': (r) => r.status === 200 });
+}
+
+export function handleSummary(data) {
+  return {
+    "qa-artifacts/k6-fiabilidad-vps.html": htmlReport(data),
+  };
 }

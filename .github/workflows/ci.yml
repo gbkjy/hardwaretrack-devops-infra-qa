@@ -111,12 +111,12 @@ jobs:
             git fetch origin main && git reset --hard origin/main
             
             # 3. Compilar la nueva versión (si falla la compilación, el script se detiene aquí y el contenedor viejo sigue corriendo)
-            docker compose -f docker-compose.staging.yml build backend-staging
+            docker compose --env-file ../.env -f docker-compose.staging.yml build backend-staging
             
             # 4. Asegurar que la base de datos esté corriendo y levantar la nueva versión
-            docker compose -f docker-compose.staging.yml up -d db-staging
+            docker compose --env-file ../.env -f docker-compose.staging.yml up -d db-staging
             sleep 5
-            docker compose -f docker-compose.staging.yml up -d --no-deps backend-staging
+            docker compose --env-file ../.env -f docker-compose.staging.yml up -d --no-deps backend-staging
             
             # 5. Loop de verificación del Healthcheck (esperar hasta 45s)
             echo "verificando contenedor..."
@@ -136,7 +136,7 @@ jobs:
             if [ "$SUCCESS" = false ]; then
               echo "error de arranque, ejecutando rollback..."
               docker tag infra-backend-staging:backup infra-backend-staging:latest
-              docker compose -f docker-compose.staging.yml up -d --no-deps backend-staging
+              docker compose --env-file ../.env -f docker-compose.staging.yml up -d --no-deps backend-staging
               echo "rollback finalizado"
               exit 1
             fi
