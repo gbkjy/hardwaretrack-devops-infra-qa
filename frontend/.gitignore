@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Vitest Coverage output
+coverage/
+htmlcov/
+
