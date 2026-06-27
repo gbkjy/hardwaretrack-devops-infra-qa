@@ -107,6 +107,12 @@ describe('Aplicación POS HardwareTrack', () => {
 
     render(<App />)
 
+    const roleSelect = screen.getByLabelText('Rol activo:')
+    fireEvent.change(roleSelect, { target: { value: 'gerente' } })
+
+    const bodegaTab = screen.getByRole('button', { name: 'Bodega' })
+    fireEvent.click(bodegaTab)
+
     const nameInput = screen.getByLabelText('Nombre:')
     const priceInput = screen.getByLabelText('Precio:')
     const stockInput = screen.getByLabelText('Stock inicial:')
@@ -121,5 +127,91 @@ describe('Aplicación POS HardwareTrack', () => {
     await waitFor(() => {
       expect(screen.getByText('Producto agregado (ID: 9)')).toBeInTheDocument()
     })
+  })
+
+  it('procesa el ingreso o actualizacion de stock exitosamente', async () => {
+    const mockProducts = [
+      { id: 1, nombre: 'Procesador AMD Ryzen 5', precio: 150000, stock: 100 }
+    ]
+
+    vi.spyOn(global, 'fetch').mockImplementation((url, options) => {
+      if (url.includes('/api/v1/productos/1/stock') && options && options.method === 'PATCH') {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve({ id: 1, nombre: 'Procesador AMD Ryzen 5', precio: 150000, stock: 105 })
+        })
+      }
+      if (url.includes('/api/v1/productos')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockProducts)
+        })
+      }
+      if (url.includes('/api/v1/ventas')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([])
+        })
+      }
+      return Promise.reject(new Error('URL Desconocida'))
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Procesador AMD Ryzen 5')).toBeInTheDocument()
+    })
+
+    const roleSelect = screen.getByLabelText('Rol activo:')
+    fireEvent.change(roleSelect, { target: { value: 'gerente' } })
+
+    const bodegaTab = screen.getByRole('button', { name: 'Bodega' })
+    fireEvent.click(bodegaTab)
+
+    const qtyInput = screen.getByLabelText('Cantidad:')
+    const submitBtn = screen.getByRole('button', { name: 'Guardar movimiento' })
+
+    fireEvent.change(qtyInput, { target: { value: '5' } })
+    fireEvent.click(submitBtn)
+
+    await waitFor(() => {
+      expect(screen.getByText('Ingreso registrado. Nuevo stock: 105')).toBeInTheDocument()
+    })
+  })
+
+  it('filtra los productos segun el termino de busqueda ingresado', async () => {
+    const mockProducts = [
+      { id: 1, nombre: 'Procesador AMD Ryzen 5', precio: 150000, stock: 100 },
+      { id: 2, nombre: 'Memoria RAM 16GB', precio: 45000, stock: 5 }
+    ]
+
+    vi.spyOn(global, 'fetch').mockImplementation((url) => {
+      if (url.includes('/api/v1/productos')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockProducts)
+        })
+      }
+      if (url.includes('/api/v1/ventas')) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve([])
+        })
+      }
+      return Promise.reject(new Error('URL Desconocida'))
+    })
+
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('Procesador AMD Ryzen 5')).toBeInTheDocument()
+      expect(screen.getByText('Memoria RAM 16GB')).toBeInTheDocument()
+    })
+
+    const searchInput = screen.getByLabelText('Buscar producto:')
+    fireEvent.change(searchInput, { target: { value: 'RAM' } })
+
+    expect(screen.queryByText('Procesador AMD Ryzen 5')).not.toBeInTheDocument()
+    expect(screen.getByText('Memoria RAM 16GB')).toBeInTheDocument()
   })
 })

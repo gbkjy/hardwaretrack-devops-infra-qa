@@ -21,6 +21,10 @@ class ProductoCreateRequest(BaseModel):
     precio: float = Field(..., ge=0)
     stock: int = Field(..., ge=0)
 
+class StockUpdateRequest(BaseModel):
+    cantidad: int = Field(..., ge=1)
+    operacion: str = Field(..., min_length=1)
+
 class VentaItemResponse(BaseModel):
     id: int
     producto_id: int

@@ -3,7 +3,7 @@ from fastapi import FastAPI, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import engine, Base, ProductoDb, VentaDb, get_db
-from models import VentaRequest, VentaResponse, ProductoResponse, HealthResponse, ProductoCreateRequest, VentaItemResponse
+from models import VentaRequest, VentaResponse, ProductoResponse, HealthResponse, ProductoCreateRequest, VentaItemResponse, StockUpdateRequest
 
 app = FastAPI()
 
@@ -119,3 +119,36 @@ def listar_ventas(db: Session = Depends(get_db)):
         )
         for venta, nombre in results
     ]
+
+@app.patch("/api/v1/productos/{producto_id}/stock", response_model=ProductoResponse)
+def actualizar_stock(producto_id: int, request: StockUpdateRequest, db: Session = Depends(get_db)):
+    producto = db.query(ProductoDb).filter(ProductoDb.id == producto_id).with_for_update().first()
+    if not producto:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Producto no encontrado"
+        )
+    
+    if request.operacion == "merma":
+        if producto.stock < request.cantidad:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Stock insuficiente para merma"
+            )
+        producto.stock -= request.cantidad
+    elif request.operacion == "ingreso":
+        producto.stock += request.cantidad
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Operación no válida"
+        )
+        
+    db.commit()
+    db.refresh(producto)
+    return ProductoResponse(
+        id=producto.id,
+        nombre=producto.nombre,
+        precio=producto.precio,
+        stock=producto.stock
+    )

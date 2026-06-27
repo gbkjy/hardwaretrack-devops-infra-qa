@@ -7,7 +7,7 @@ on:
 
 jobs:
   tests-cobertura:
-    name: Tests unitarios + Cobertura
+    name: Tests unitarios + Cobertura (Backend Python)
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -46,7 +46,7 @@ jobs:
             backend/coverage.xml
 
   tests-frontend:
-    name: Tests unitarios + SCA (Frontend)
+    name: Tests unitarios + SCA (Frontend React/Vitest)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +69,7 @@ jobs:
           npm audit
 
   auditoria-sca:
-    name: Auditoría de seguridad (SCA)
+    name: Auditoría de seguridad SCA (Backend Python)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -90,7 +90,7 @@ jobs:
           path: qa-artifacts/pip-audit-report.json
 
   despliegue-staging:
-    name: Despliegue continuo a Staging
+    name: Despliegue continuo a Staging VPS (Docker)
     runs-on: ubuntu-latest
     needs: [tests-cobertura, auditoria-sca, tests-frontend]
     if: github.ref == 'refs/heads/main'

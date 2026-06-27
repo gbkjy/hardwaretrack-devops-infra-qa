@@ -51,7 +51,6 @@ def test_crear_producto_invalido(client):
     assert response.status_code == 422
 
 def test_listar_ventas(client):
-    # Register a sale first
     client.post("/api/v1/ventas", json={"producto_id": 1, "cantidad": 2})
     response = client.get("/api/v1/ventas")
     assert response.status_code == 200
@@ -59,3 +58,18 @@ def test_listar_ventas(client):
     assert response.json()[0]["producto_id"] == 1
     assert response.json()[0]["cantidad"] == 2
     assert "nombre_producto" in response.json()[0]
+
+def test_actualizar_stock_ingreso(client):
+    response = client.patch("/api/v1/productos/1/stock", json={"cantidad": 10, "operacion": "ingreso"})
+    assert response.status_code == 200
+    assert response.json()["stock"] == 1000009
+
+def test_actualizar_stock_merma(client):
+    response = client.patch("/api/v1/productos/1/stock", json={"cantidad": 5, "operacion": "merma"})
+    assert response.status_code == 200
+    assert response.json()["stock"] == 999994
+
+def test_actualizar_stock_insuficiente(client):
+    response = client.patch("/api/v1/productos/1/stock", json={"cantidad": 9999999, "operacion": "merma"})
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Stock insuficiente para merma"
