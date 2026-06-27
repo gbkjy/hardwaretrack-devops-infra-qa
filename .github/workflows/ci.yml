@@ -90,7 +90,8 @@ jobs:
             # 3. Compilar la nueva versión (si falla la compilación, el script se detiene aquí y el contenedor viejo sigue corriendo)
             docker compose -f docker-compose.staging.yml build backend-staging
             
-            # 4. Intentar levantar la nueva versión sin apagar el resto de servicios
+            # 4. Asegurar que la base de datos esté corriendo y levantar la nueva versión
+            docker compose -f docker-compose.staging.yml up -d db-staging
             docker compose -f docker-compose.staging.yml up -d --no-deps backend-staging
             
             # 5. Loop de verificación del Healthcheck (esperar hasta 30s)

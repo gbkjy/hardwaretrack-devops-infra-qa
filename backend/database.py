@@ -12,7 +12,7 @@ Base = declarative_base()
 class ProductoDb(Base):
     __tablename__ = "productos"
 
-    id = Column(Integer, primary key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     nombre = Column(String, nullable=False)
     precio = Column(Float, nullable=False)
     stock = Column(Integer, nullable=False)
@@ -20,7 +20,7 @@ class ProductoDb(Base):
 class VentaDb(Base):
     __tablename__ = "ventas"
 
-    id = Column(Integer, primary key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)
     producto_id = Column(Integer, nullable=False)
     cantidad = Column(Integer, nullable=False)
     fecha = Column(DateTime, default=datetime.utcnow)
