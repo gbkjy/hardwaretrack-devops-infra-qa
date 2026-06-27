@@ -92,19 +92,20 @@ jobs:
             
             # 4. Asegurar que la base de datos esté corriendo y levantar la nueva versión
             docker compose -f docker-compose.staging.yml up -d db-staging
+            sleep 5
             docker compose -f docker-compose.staging.yml up -d --no-deps backend-staging
             
-            # 5. Loop de verificación del Healthcheck (esperar hasta 30s)
+            # 5. Loop de verificación del Healthcheck (esperar hasta 45s)
             echo "verificando contenedor..."
             SUCCESS=false
-            for i in {1..10}; do
+            for i in {1..15}; do
               STATUS=$(docker inspect --format='{{.State.Health.Status}}' infra-backend-staging-1 2>/dev/null || echo "starting")
               if [ "$STATUS" = "healthy" ]; then
                 echo "contenedor saludable"
                 SUCCESS=true
                 break
               fi
-              echo "esperando confirmacion... (intento $i/10, estado: $STATUS)"
+              echo "esperando confirmacion... (intento $i/15, estado: $STATUS)"
               sleep 3
             done
             
