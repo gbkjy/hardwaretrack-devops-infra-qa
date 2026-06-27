@@ -1,0 +1,51 @@
+name: CI Pipeline HardwareTrack
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  tests-cobertura:
+    name: Tests unitarios + Cobertura
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar dependencias
+        run: pip install -r backend/requirements.txt
+      - name: Ejecutar pytest con cobertura
+        run: |
+          cd backend
+          pytest --cov=. --cov-report=term --cov-report=html:../htmlcov --cov-report=xml:coverage.xml -v
+      - name: Subir reporte de cobertura
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: |
+            htmlcov/
+            backend/coverage.xml
+
+  auditoria-sca:
+    name: Auditoría de seguridad (SCA)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Instalar pip-audit
+        run: pip install pip-audit
+      - name: Ejecutar pip-audit
+        run: |
+          mkdir -p qa-artifacts
+          pip-audit -r backend/requirements.txt -f json -o qa-artifacts/pip-audit-report.json
+      - name: Subir reporte SCA
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pip-audit-report
+          path: qa-artifacts/pip-audit-report.json
