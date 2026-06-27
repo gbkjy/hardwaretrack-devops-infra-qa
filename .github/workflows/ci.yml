@@ -84,8 +84,8 @@ jobs:
             # 1. Respaldar la imagen actual si existe
             docker tag infra-backend-staging:latest infra-backend-staging:backup || true
             
-            # 2. Traer el nuevo código
-            git pull origin main
+            # 2. Traer el nuevo código forzando la alineación con la rama remota
+            git fetch origin main && git reset --hard origin/main
             
             # 3. Compilar la nueva versión (si falla la compilación, el script se detiene aquí y el contenedor viejo sigue corriendo)
             docker compose -f docker-compose.staging.yml build backend-staging
