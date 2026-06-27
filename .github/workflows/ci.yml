@@ -9,6 +9,20 @@ jobs:
   tests-cobertura:
     name: Tests unitarios + Cobertura
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: hardwaretrack_staging
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -17,6 +31,8 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r backend/requirements.txt
       - name: Ejecutar pytest con cobertura
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hardwaretrack_staging
         run: |
           cd backend
           python -m pytest --cov=. --cov-report=term --cov-report=html:../htmlcov --cov-report=xml:coverage.xml -v

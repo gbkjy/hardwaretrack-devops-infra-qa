@@ -1,5 +1,3 @@
-from main import INVENTARIO
-
 def test_health_check(client):
     response = client.get("/health")
     assert response.status_code == 200
@@ -11,7 +9,7 @@ def test_venta_exitosa(client):
     assert response.json()["stock_restante"] == 999997
 
 def test_venta_stock_insuficiente(client):
-    INVENTARIO[1]["stock"] = 0
+    client.post("/api/v1/ventas", json={"producto_id": 1, "cantidad": 999999})
     response = client.post("/api/v1/ventas", json={"producto_id": 1, "cantidad": 1})
     assert response.status_code == 400
     assert response.json()["detail"] == "Stock insuficiente"
