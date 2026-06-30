@@ -45,7 +45,12 @@ jobs:
             htmlcov/
             backend/coverage.xml
 
+      - name: Corregir rutas en reporte de cobertura para SonarQube
+        run: |
+          sed -i "s|<source>/home/runner/work/hardwaretrack-devops-infra-qa/hardwaretrack-devops-infra-qa/backend</source>|<source>/github/workspace/backend</source>|g" backend/coverage.xml
+
       - name: SonarQube Scan
+
         uses: sonarsource/sonarqube-scan-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
