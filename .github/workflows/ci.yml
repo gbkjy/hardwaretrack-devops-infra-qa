@@ -45,6 +45,13 @@ jobs:
             htmlcov/
             backend/coverage.xml
 
+      - name: SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+
   tests-frontend:
     name: Tests unitarios + SCA (Frontend React/Vitest)
     runs-on: ubuntu-latest
